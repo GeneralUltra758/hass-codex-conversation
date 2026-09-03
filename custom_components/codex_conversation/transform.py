@@ -20,7 +20,6 @@ from homeassistant.components.conversation import (
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import llm
-from voluptuous_openapi import convert
 
 
 def json_default(obj: object) -> str:
@@ -35,6 +34,11 @@ def format_tool(
     custom_serializer: Callable[[Any], Any] | None = None,
 ) -> dict[str, Any]:
     """Format an HA LLM tool as a Responses API function definition."""
+    # Home Assistant 2026.9 replaced voluptuous-openapi with Probatio. Use the
+    # converter re-exported by HA so its custom serializer and unsupported
+    # sentinel always come from the same schema library.
+    convert = getattr(llm, "to_openapi", None) or getattr(llm, "convert")
+
     return {
         "type": "function",
         "name": tool.name,

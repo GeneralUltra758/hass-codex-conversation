@@ -284,16 +284,32 @@ def test_format_tool_empty_description():
     assert result["description"] == ""
 
 
+def test_format_tool_uses_home_assistant_openapi_converter(monkeypatch):
+    """Use the converter matching the schema library bundled with HA."""
+    converter = MagicMock(return_value={"type": "object"})
+    serializer = MagicMock()
+    monkeypatch.setattr(llm, "to_openapi", converter, raising=False)
+
+    tool = MagicMock(spec=llm.Tool)
+    tool.name = "ping"
+    tool.description = None
+    tool.parameters = MagicMock()
+
+    result = format_tool(tool, custom_serializer=serializer)
+
+    assert result["parameters"] == {"type": "object"}
+    converter.assert_called_once_with(tool.parameters, custom_serializer=serializer)
+
+
 def test_format_tool_selectors():
     """Home Assistant selectors use the LLM API's schema serializer."""
-    import voluptuous as vol
-
     from homeassistant.helpers.selector import (
         SelectSelector,
         SelectSelectorConfig,
         TextSelector,
         TextSelectorConfig,
     )
+    import voluptuous as vol
 
     tool = MagicMock(spec=llm.Tool)
     tool.name = "set_mode"
