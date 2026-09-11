@@ -105,6 +105,27 @@ async def test_edit_yaml_file_requires_confirmation(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_edit_yaml_file_refuses_existing_sensitive_fields(tmp_path):
+    hass = make_hass(tmp_path)
+    (tmp_path / "configuration.yaml").write_text("api_key: keep-this-secret\n")
+
+    with pytest.raises(vol.Invalid, match="sensitive fields"):
+        await EditYamlFileTool().async_call(
+            hass,
+            SimpleNamespace(
+                tool_args={
+                    "path": "configuration.yaml",
+                    "content": "changed: true",
+                    "confirm": True,
+                }
+            ),
+            None,
+        )
+
+    assert (tmp_path / "configuration.yaml").read_text() == "api_key: keep-this-secret\n"
+
+
+@pytest.mark.asyncio
 async def test_read_yaml_file_redacts_credentials(tmp_path):
     hass = make_hass(tmp_path)
     (tmp_path / "configuration.yaml").write_text(

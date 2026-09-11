@@ -67,6 +67,19 @@ def _redact_yaml(value: Any) -> Any:
     return value
 
 
+def _contains_sensitive_keys(value: Any) -> bool:
+    """Return whether YAML contains fields that cannot be safely round-tripped."""
+    if isinstance(value, dict):
+        return any(
+            any(part in str(key).lower() for part in _SENSITIVE_KEY_PARTS)
+            or _contains_sensitive_keys(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, list):
+        return any(_contains_sensitive_keys(item) for item in value)
+    return False
+
+
 async def _reload(hass: HomeAssistant, domain: str) -> dict[str, Any]:
     await hass.services.async_call(domain, "reload", {}, blocking=True)
     return {"success": True, "reloaded": domain}
@@ -232,6 +245,12 @@ class EditYamlFileTool(_ConfigTool):
         _ensure_config_path(hass, path)
         if path.suffix not in {".yaml", ".yml"}:
             raise vol.Invalid("Only YAML files can be edited")
+        existing = await hass.async_add_executor_job(_read_yaml, path, None)
+        if _contains_sensitive_keys(existing):
+            raise vol.Invalid(
+                "Refusing to replace a YAML file containing sensitive fields. "
+                "Back it up and use a targeted editor that preserves secrets."
+            )
         content = tool_input.tool_args["content"]
         parsed = await hass.async_add_executor_job(yaml.safe_load, content)
         await hass.async_add_executor_job(_atomic_write_yaml, path, parsed)

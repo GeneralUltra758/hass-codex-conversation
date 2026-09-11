@@ -80,6 +80,11 @@ dashboard YAML files. Keep this disabled unless you want Codex to edit other
 configuration files. It provides `read_yaml_file` and `edit_yaml_file`; common
 credential fields are redacted when files are read.
 
+The general editor refuses to replace an existing YAML file if it detects
+sensitive-key fields. Always back up critical files before enabling agent file
+editing. Targeted script, automation, and dashboard tools should be preferred
+for those file types.
+
 After changing YAML, ask Codex to run the corresponding reload tool. A reload
 does not restart Home Assistant. Configuration-managed automations may be
 stored elsewhere or managed by the UI, so the dedicated automation tools only
