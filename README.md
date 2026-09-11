@@ -176,6 +176,14 @@ This starts Home Assistant using `config/configuration.yaml`.
 - Pre-commit now uses Ruff, codespell, JSON/YAML checks, and Prettier for repository files.
 - Dependabot is configured for GitHub Actions and Python dependencies.
 
+## Credits
+
+This fork is based on [JurajNyiri/hass-codex-conversation](https://github.com/JurajNyiri/hass-codex-conversation), which in turn is a fork of [petretiandrea/hass-codex-conversation](https://github.com/petretiandrea/hass-codex-conversation).
+The Codex conversation, OAuth, and Home Assistant integration foundation are
+retained from that upstream work. The configuration-skill additions in this
+fork were authored for `GeneralUltra758/hass-codex-conversation` and are
+documented in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
+
 ## Disclaimer
 
 This integration uses an unofficial internal endpoint, `chatgpt.com/backend-api/codex/responses`, which is not publicly documented by OpenAI.
