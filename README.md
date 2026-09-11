@@ -77,7 +77,8 @@ conversation subentry's Home Assistant API list. This API is intentionally
 opt-in and requires `confirm: true` in each call. It only permits `.yaml` and
 `.yml` files inside the Home Assistant configuration directory, including
 dashboard YAML files. Keep this disabled unless you want Codex to edit other
-configuration files.
+configuration files. It provides `read_yaml_file` and `edit_yaml_file`; common
+credential fields are redacted when files are read.
 
 After changing YAML, ask Codex to run the corresponding reload tool. A reload
 does not restart Home Assistant. Configuration-managed automations may be

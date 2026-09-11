@@ -11,6 +11,7 @@ from custom_components.codex_conversation.config_tools import (
     CreateDashboardTool,
     EditYamlFileTool,
     ListAutomationsTool,
+    ReadYamlFileTool,
     UpsertAutomationTool,
     UpsertScriptTool,
 )
@@ -101,6 +102,24 @@ async def test_edit_yaml_file_requires_confirmation(tmp_path):
             ),
             None,
         )
+
+
+@pytest.mark.asyncio
+async def test_read_yaml_file_redacts_credentials(tmp_path):
+    hass = make_hass(tmp_path)
+    (tmp_path / "configuration.yaml").write_text(
+        "homeassistant:\n  name: Test\napi_key: secret-value\nnested:\n  password: hidden\n"
+    )
+
+    result = await ReadYamlFileTool().async_call(
+        hass,
+        SimpleNamespace(tool_args={"path": "configuration.yaml"}),
+        None,
+    )
+
+    assert result["content"]["homeassistant"]["name"] == "Test"
+    assert result["content"]["api_key"] == "[REDACTED]"
+    assert result["content"]["nested"]["password"] == "[REDACTED]"
 
 
 @pytest.mark.asyncio

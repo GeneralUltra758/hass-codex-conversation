@@ -16,6 +16,15 @@ FILES_API_ID = "codex_hass_files"
 _SCRIPT_FILE = "scripts.yaml"
 _AUTOMATION_FILE = "automations.yaml"
 _DASHBOARD_DIR = "codex_dashboards"
+_SENSITIVE_KEY_PARTS = (
+    "token",
+    "password",
+    "secret",
+    "api_key",
+    "apikey",
+    "credential",
+    "authorization",
+)
 
 
 def _config_path(hass: HomeAssistant, filename: str) -> Path:
@@ -42,6 +51,20 @@ def _atomic_write_yaml(path: Path, value: Any) -> None:
     with temporary.open("w", encoding="utf-8") as stream:
         yaml.safe_dump(value, stream, allow_unicode=True, sort_keys=False)
     temporary.replace(path)
+
+
+def _redact_yaml(value: Any) -> Any:
+    """Redact common credential fields before returning YAML to the model."""
+    if isinstance(value, dict):
+        return {
+            key: "[REDACTED]"
+            if any(part in str(key).lower() for part in _SENSITIVE_KEY_PARTS)
+            else _redact_yaml(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_yaml(item) for item in value]
+    return value
 
 
 async def _reload(hass: HomeAssistant, domain: str) -> dict[str, Any]:
@@ -215,6 +238,29 @@ class EditYamlFileTool(_ConfigTool):
         return {"success": True, "path": str(path.relative_to(Path(hass.config.path()).resolve()))}
 
 
+class ReadYamlFileTool(_ConfigTool):
+    def __init__(self):
+        super().__init__(
+            "read_yaml_file",
+            "Read and validate a YAML file inside the Home Assistant config directory. Common credential fields are redacted.",
+            vol.Schema({vol.Required("path"): str}),
+        )
+
+    async def async_call(self, hass, tool_input, llm_context):
+        path = Path(hass.config.path(tool_input.tool_args["path"])).resolve()
+        _ensure_config_path(hass, path)
+        if path.suffix not in {".yaml", ".yml"}:
+            raise vol.Invalid("Only YAML files can be read")
+        if not path.exists():
+            raise vol.Invalid("YAML file does not exist")
+        parsed = await hass.async_add_executor_job(_read_yaml, path, None)
+        return {
+            "success": True,
+            "path": str(path.relative_to(Path(hass.config.path()).resolve())),
+            "content": _redact_yaml(parsed),
+        }
+
+
 class _ToolAPI(llm.API):
     def __init__(self, hass: HomeAssistant, api_id: str, name: str, tools: list[llm.Tool]):
         super().__init__(hass=hass, id=api_id, name=name)
@@ -246,7 +292,12 @@ def register_apis(hass: HomeAssistant) -> list:
         ),
         llm.async_register_api(
             hass,
-            _ToolAPI(hass, FILES_API_ID, "Codex Home Assistant YAML files", [EditYamlFileTool()]),
+            _ToolAPI(
+                hass,
+                FILES_API_ID,
+                "Codex Home Assistant YAML files",
+                [ReadYamlFileTool(), EditYamlFileTool()],
+            ),
         ),
     ]
     return unregister
