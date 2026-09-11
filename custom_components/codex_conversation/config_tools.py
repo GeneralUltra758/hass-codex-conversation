@@ -261,7 +261,7 @@ class ReadYamlFileTool(_ConfigTool):
     def __init__(self):
         super().__init__(
             "read_yaml_file",
-            "Read and validate a YAML file inside the Home Assistant config directory. Common credential fields are redacted.",
+            "Read and validate a YAML file inside the Home Assistant config directory. Common credential fields are redacted. The result is not safe to write back; back up the file and manually restore redacted values.",
             vol.Schema({vol.Required("path"): str}),
         )
 
@@ -277,6 +277,11 @@ class ReadYamlFileTool(_ConfigTool):
             "success": True,
             "path": str(path.relative_to(Path(hass.config.path()).resolve())),
             "content": _redact_yaml(parsed),
+            "warning": (
+                "This content may contain [REDACTED] placeholders and must not be "
+                "written back as a full-file replacement. Back up the original "
+                "file and manually restore redacted values before any manual edit."
+            ),
         }
 
 

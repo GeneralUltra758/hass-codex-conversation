@@ -141,6 +141,7 @@ async def test_read_yaml_file_redacts_credentials(tmp_path):
     assert result["content"]["homeassistant"]["name"] == "Test"
     assert result["content"]["api_key"] == "[REDACTED]"
     assert result["content"]["nested"]["password"] == "[REDACTED]"
+    assert "must not be" in result["warning"]
 
 
 @pytest.mark.asyncio

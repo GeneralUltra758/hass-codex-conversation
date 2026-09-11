@@ -80,6 +80,11 @@ dashboard YAML files. Keep this disabled unless you want Codex to edit other
 configuration files. It provides `read_yaml_file` and `edit_yaml_file`; common
 credential fields are redacted when files are read.
 
+Read results are not safe round-trip documents: they may contain
+`[REDACTED]` placeholders. Back up critical files and manually restore those
+values before making any manual edit. The general agent editor will refuse to
+replace files that contain sensitive fields.
+
 The general editor refuses to replace an existing YAML file if it detects
 sensitive-key fields. Always back up critical files before enabling agent file
 editing. Targeted script, automation, and dashboard tools should be preferred
