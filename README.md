@@ -18,6 +18,7 @@ This integration reuses the same authenticated Codex backend flow and exposes it
 - Home Assistant Assist integration.
 - Automatic token refresh.
 - Initial `ai_task` support for `generate_data`.
+- Home Assistant configuration tools for scripts and automations.
 
 ## Requirements
 
@@ -55,6 +56,35 @@ This integration reuses the same authenticated Codex backend flow and exposes it
 5. Approve the login and complete the integration setup.
 
 ## Configuration
+
+### Home Assistant configuration skills
+
+The Codex conversation agent exposes a `Codex Home Assistant configuration`
+API alongside the normal Assist API. It can:
+
+- list scripts and automations;
+- create or replace entries in `scripts.yaml` and `automations.yaml`;
+- create validated Lovelace dashboard YAML under `codex_dashboards/`;
+- reload scripts and automations through Home Assistant services; and
+- call normal Home Assistant services through the Assist API.
+
+Writes are limited to the dedicated script and automation files. They use
+atomic replacement and return errors to Codex instead of silently applying an
+invalid file.
+
+For broader YAML changes, select `Codex Home Assistant YAML files` in the
+conversation subentry's Home Assistant API list. This API is intentionally
+opt-in and requires `confirm: true` in each call. It only permits `.yaml` and
+`.yml` files inside the Home Assistant configuration directory, including
+dashboard YAML files. Keep this disabled unless you want Codex to edit other
+configuration files.
+
+After changing YAML, ask Codex to run the corresponding reload tool. A reload
+does not restart Home Assistant. Configuration-managed automations may be
+stored elsewhere or managed by the UI, so the dedicated automation tools only
+edit `automations.yaml`. Dashboard creation writes a file but does not change
+the Lovelace storage backend; add the generated file to a YAML-mode dashboard
+before using it. The opt-in YAML editor can update that dashboard file later.
 
 After setup, you can change options from **Settings -> Devices & Services -> OpenAI Codex Conversation -> Configure**.
 
